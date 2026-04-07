@@ -57,41 +57,67 @@
   gap: 0.8rem;
 }
 
-.userInfo {
+.profileWrapper {
+  position: relative;
+}
+
+.profileButton {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  justify-content: center;
   color: #dbe7ff;
   font-size: 0.95rem;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 999px;
-  padding: 0.45rem 0.55rem 0.45rem 0.9rem;
+  padding: 0.55rem 0.9rem;
   backdrop-filter: blur(10px);
-}
-
-.loginButton,
-.logoutButton {
-  padding: 0.58rem 1.1rem;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.32);
+  min-width: 9rem;
+  max-width: 16rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
   transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
 }
 
-.loginButton:hover,
-.logoutButton:hover {
+.profileButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.36);
-  filter: brightness(1.05);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.24);
+  filter: brightness(1.03);
 }
 
-.loginButton:active,
-.logoutButton:active {
+.profileMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  min-width: 8rem;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 0.35rem;
+  box-shadow: 0 16px 34px rgba(2, 6, 23, 0.48);
+}
+
+.menuButton {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: transform 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+}
+
+.menuButton:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(147, 197, 253, 0.5);
+}
+
+.profileButton:active,
+.menuButton:active {
   transform: translateY(0);
 }
 
@@ -189,7 +215,7 @@
     top: 1rem;
   }
 
-  .userInfo {
+  .profileButton {
     font-size: 0.88rem;
   }
 
@@ -212,8 +238,8 @@
   .container::after,
   .button,
   .button::after,
-  .loginButton,
-  .logoutButton {
+  .profileButton,
+  .menuButton {
     animation: none;
     transition: none;
   }

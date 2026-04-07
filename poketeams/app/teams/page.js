@@ -3,18 +3,53 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { teamService } from '../../lib/teamService';
-import { anonymousService } from '../../lib/anonymousService';
+import { authService } from '../../lib/authService';
 import styles from './page.module.css';
 
 export default function Teams() {
   const [savedTeams, setSavedTeams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    loadSavedTeams();
-  }, []);
+    let isMounted = true;
+
+    const validateAuth = async () => {
+      const {
+        data: { user }
+      } = await authService.getCurrentUser();
+
+      if (!isMounted) return;
+
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
+      setAuthLoading(false);
+      loadSavedTeams();
+    };
+
+    validateAuth();
+
+    const { data: authListener } = authService.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      if (!session?.user) {
+        router.replace('/auth');
+        return;
+      }
+
+      loadSavedTeams();
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
 
   const loadSavedTeams = async () => {
     try {
@@ -59,6 +94,15 @@ export default function Teams() {
     }
     return effective;
   };
+
+  if (authLoading) {
+    return (
+      <div className={styles.container}>
+        <h1 className={styles.title}>Meus Times Salvos</h1>
+        <p>Verificando autenticacao...</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

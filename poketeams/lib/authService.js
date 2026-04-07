@@ -30,7 +30,7 @@ export const authService = {
   },
 
   // Get current user
-  getCurrentUser() {
+  async getCurrentUser() {
     return supabase.auth.getUser()
   },
 

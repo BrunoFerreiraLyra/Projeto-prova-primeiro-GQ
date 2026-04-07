@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '../../lib/authService';
 import styles from './page.module.css';
@@ -119,6 +119,7 @@ export default function Auth() {
   const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -127,6 +128,43 @@ export default function Auth() {
   const isSignup = mode === MODE.SIGNUP;
 
   const shouldShowFieldError = (field) => submitAttempted || touched[field];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkSession = async () => {
+      const {
+        data: { user }
+      } = await authService.getCurrentUser();
+
+      if (!isMounted) return;
+
+      if (user) {
+        router.replace('/builder');
+        return;
+      }
+
+      setSessionLoading(false);
+    };
+
+    checkSession();
+
+    const { data: authListener } = authService.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      if (session?.user) {
+        router.replace('/builder');
+        return;
+      }
+
+      setSessionLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
 
   const getVisibleFieldError = (field) => (shouldShowFieldError(field) ? fieldErrors[field] : '');
 
@@ -189,6 +227,16 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  if (sessionLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.authCard}>
+          <h1 className={styles.title}>Carregando...</h1>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

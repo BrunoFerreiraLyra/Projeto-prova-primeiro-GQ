@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import PokemonSearch from './components/PokemonSearch';
 import PokemonDetails from './components/PokemonDetails';
-import { supabase } from '../../lib/supabase';
 import { teamService } from '../../lib/teamService';
 import { authService } from '../../lib/authService';
 
@@ -25,12 +25,98 @@ export default function Builder() {
   const [abilitiesList, setAbilitiesList] = useState([]);
   const [itemsList, setItemsList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [user, setUser] = useState(null);
   const [teamName, setTeamName] = useState('Meu Time');
   const [savedTeams, setSavedTeams] = useState([]);
+  const router = useRouter();
+
+  async function loadSavedTeams() {
+    try {
+      const teams = await teamService.getUserTeams();
+      setSavedTeams(teams);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  }
+
+  async function loadTeamFromData(savedTeam) {
+    try {
+      const loadedTeam = Array(6).fill(null);
+
+      for (let i = 0; i < savedTeam.team_pokemon.length && i < 6; i++) {
+        const tp = savedTeam.team_pokemon[i];
+
+        loadedTeam[i] = {
+          id: tp.pokemon_id,
+          name: tp.name,
+          types: tp.types || [],
+          stats: tp.base_stats,
+          image: tp.image_url,
+          abilities: [],
+          moves: [],
+          nickname: tp.nickname,
+          level: tp.level,
+          ivs: tp.ivs,
+          evs: tp.evs,
+          moves: tp.moves,
+          ability: tp.ability,
+          item: tp.item
+        };
+      }
+
+      setTeam(loadedTeam);
+      setTeamName(savedTeam.name);
+      alert('Time carregado com sucesso para ediÃ§Ã£o!');
+    } catch (error) {
+      console.error('Error loading team from data:', error);
+      alert('Erro ao carregar o time.');
+    }
+  }
 
   useEffect(() => {
+    let isMounted = true;
+
+    const validateAuth = async () => {
+      const {
+        data: { user }
+      } = await authService.getCurrentUser();
+
+      if (!isMounted) return;
+
+      if (!user) {
+        router.replace('/auth');
+        return;
+      }
+
+      setUser(user);
+      setAuthLoading(false);
+    };
+
+    validateAuth();
+
+    const { data: authListener } = authService.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      const currentUser = session?.user ?? null;
+      if (!currentUser) {
+        router.replace('/auth');
+        return;
+      }
+
+      setUser(currentUser);
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
     const fetchData = async () => {
       try {
         const pokemonRes = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151');
@@ -57,12 +143,12 @@ export default function Builder() {
     };
 
     fetchData();
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await authService.getCurrentUser();
-      setUser(user);
+    if (authLoading || !user) return;
+
+    const loadInitialState = async () => {
       loadSavedTeams();
 
       const loadedTeamData = localStorage.getItem('loaded_team');
@@ -76,17 +162,9 @@ export default function Builder() {
         }
       }
     };
-    getUser();
 
-    const { data: authListener } = authService.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      loadSavedTeams();
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+    loadInitialState();
+  }, [authLoading, user]);
 
   const handleSlotClick = (index) => {
     setSelectedSlot(index);
@@ -196,16 +274,13 @@ export default function Builder() {
     setEvs({ hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 });
   };
 
-  const loadSavedTeams = async () => {
-    try {
-      const teams = await teamService.getUserTeams();
-      setSavedTeams(teams);
-    } catch (error) {
-      console.error('Error loading teams:', error);
-    }
-  };
 
   const saveTeam = async () => {
+    if (!user) {
+      router.replace('/auth');
+      return;
+    }
+
     try {
       const pokemonList = team.filter(p => p).map(p => ({
         id: p.id,
@@ -223,46 +298,13 @@ export default function Builder() {
       }));
       await teamService.createTeam(teamName, pokemonList);
       alert('Time salvo com sucesso!');
-      loadSavedTeams();
+      await loadSavedTeams();
     } catch (error) {
       console.error('Error saving team:', error);
       alert('Erro ao salvar o time.');
     }
   };
 
-  const loadTeamFromData = async (savedTeam) => {
-    try {
-      const loadedTeam = Array(6).fill(null);
-
-      for (let i = 0; i < savedTeam.team_pokemon.length && i < 6; i++) {
-        const tp = savedTeam.team_pokemon[i];
-
-        loadedTeam[i] = {
-          id: tp.pokemon_id,
-          name: tp.name,
-          types: tp.types || [],
-          stats: tp.base_stats,
-          image: tp.image_url,
-          abilities: [],
-          moves: [],
-          nickname: tp.nickname,
-          level: tp.level,
-          ivs: tp.ivs,
-          evs: tp.evs,
-          moves: tp.moves,
-          ability: tp.ability,
-          item: tp.item
-        };
-      }
-
-      setTeam(loadedTeam);
-      setTeamName(savedTeam.name);
-      alert('Time carregado com sucesso para edição!');
-    } catch (error) {
-      console.error('Error loading team from data:', error);
-      alert('Erro ao carregar o time.');
-    }
-  };
 
   const loadTeam = async (savedTeam) => {
     try {
@@ -361,6 +403,10 @@ export default function Builder() {
   };
 
   const filteredPokemon = pokemonList.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  if (authLoading) {
+    return <div className={styles.container}>Verificando autenticacao...</div>;
+  }
 
   if (loading) {
     return <div className={styles.container}>Carregando...</div>;
