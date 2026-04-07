@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { teamService } from '../../lib/teamService';
 import { authService } from '../../lib/authService';
 import styles from './page.module.css';
+import BackToHome from '../components/BackToHome';
 
 export default function Teams() {
   const [savedTeams, setSavedTeams] = useState([]);
@@ -115,6 +116,7 @@ export default function Teams() {
 
   return (
     <div className={styles.container}>
+      <BackToHome />
       <h1 className={styles.title}>Meus Times Salvos</h1>
 
       {savedTeams.length === 0 ? (

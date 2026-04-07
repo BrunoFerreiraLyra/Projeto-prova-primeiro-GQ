@@ -7,6 +7,7 @@ import PokemonSearch from './components/PokemonSearch';
 import PokemonDetails from './components/PokemonDetails';
 import { teamService } from '../../lib/teamService';
 import { authService } from '../../lib/authService';
+import BackToHome from '../components/BackToHome';
 
 export default function Builder() {
   const [team, setTeam] = useState(Array(6).fill(null));
@@ -414,6 +415,7 @@ export default function Builder() {
 
   return (
     <div className={styles.container}>
+      <BackToHome />
       <div className={styles.teamSection}>
         <h1 className={styles.title}>Construtor de Times</h1>
         <div className={styles.saveSection}>
