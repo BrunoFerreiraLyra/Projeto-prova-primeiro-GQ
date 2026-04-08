@@ -14,8 +14,28 @@ export const authService = {
 
   // Sign in
   async signIn(email, password) {
+    const login = email.trim()
+    const isEmailLogin = login.includes('@')
+    let resolvedEmail = login
+
+    if (!isEmailLogin) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .ilike('username', login)
+        .maybeSingle()
+
+      if (profileError) throw profileError
+      if (!profile) throw new Error('Usuario nao encontrado')
+      if (!profile.email) {
+        throw new Error('Perfil sem email vinculado. Atualize a tabela profiles com o campo email.')
+      }
+
+      resolvedEmail = profile.email
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: resolvedEmail,
       password
     })
 

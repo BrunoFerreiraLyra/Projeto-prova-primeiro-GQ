@@ -34,6 +34,11 @@ function getFieldError(field, value, formData, mode) {
   const trimmedEmail = formData.email.trim();
 
   if (field === 'email') {
+    if (mode === MODE.LOGIN) {
+      if (!trimmedEmail) return 'Informe seu email ou usuario.';
+      return '';
+    }
+
     if (!trimmedEmail) return 'Informe seu email.';
     if (!EMAIL_REGEX.test(trimmedEmail)) return 'Informe um email valido.';
     return '';
@@ -246,13 +251,13 @@ export default function Auth() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <AuthField
             id="email"
-            label="Email"
-            type="email"
+            label={mode === MODE.LOGIN ? 'Email ou usuario' : 'Email'}
+            type={mode === MODE.LOGIN ? 'text' : 'email'}
             value={email}
             onChange={handleInputChange('email')}
             onBlur={handleBlur('email')}
             disabled={loading}
-            autoComplete="email"
+            autoComplete={mode === MODE.LOGIN ? 'username' : 'email'}
             error={getVisibleFieldError('email')}
             showState={shouldShowFieldError('email')}
           />
