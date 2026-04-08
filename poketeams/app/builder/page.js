@@ -32,6 +32,7 @@ export default function Builder() {
   const [teamName, setTeamName] = useState('Meu Time');
   const [savedTeams, setSavedTeams] = useState([]);
   const [editingTeamId, setEditingTeamId] = useState(null);
+  const [deletingTeamId, setDeletingTeamId] = useState(null);
   const router = useRouter();
 
   async function loadSavedTeams() {
@@ -276,7 +277,7 @@ export default function Builder() {
     setEvs({ hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 });
   };
 
-  const handleNewTeam = () => {
+  const resetBuilder = () => {
     setTeam(Array(6).fill(null));
     setSelectedSlot(null);
     setSearchTerm('');
@@ -289,6 +290,37 @@ export default function Builder() {
     setEvs({ hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 });
     setTeamName('Meu Time');
     setEditingTeamId(null);
+  };
+
+  const handleNewTeam = () => {
+    resetBuilder();
+  };
+
+  const handleDeleteTeam = async (teamId) => {
+    if (!teamId) {
+      alert('ID do time invalido.');
+      return;
+    }
+
+    const confirmDelete = window.confirm('Tem certeza que deseja excluir este time?');
+    if (!confirmDelete) return;
+
+    try {
+      setDeletingTeamId(teamId);
+      await teamService.deleteTeam(teamId);
+      alert('Time excluido com sucesso!');
+
+      if (teamId === editingTeamId) {
+        resetBuilder();
+      }
+
+      await loadSavedTeams();
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      alert('Erro ao excluir time.');
+    } finally {
+      setDeletingTeamId(null);
+    }
   };
 
 
@@ -530,7 +562,22 @@ export default function Builder() {
               {savedTeams.map((savedTeam) => (
                 <li key={savedTeam.id} className={styles.savedTeamItem}>
                   <span>{savedTeam.name}</span>
-                  <button onClick={() => loadTeam(savedTeam)} className={`${styles.button} ${styles.secondaryButton} ${styles.loadButton}`}>Carregar</button>
+                  <div className={styles.savedTeamActions}>
+                    <button
+                      onClick={() => loadTeam(savedTeam)}
+                      className={`${styles.button} ${styles.secondaryButton} ${styles.loadButton}`}
+                      disabled={deletingTeamId === savedTeam.id}
+                    >
+                      Carregar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTeam(savedTeam.id)}
+                      className={`${styles.button} ${styles.dangerButton} ${styles.loadButton}`}
+                      disabled={deletingTeamId === savedTeam.id}
+                    >
+                      {deletingTeamId === savedTeam.id ? 'Excluindo...' : 'Excluir'}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

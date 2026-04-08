@@ -12,6 +12,7 @@ export default function Teams() {
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [deletingTeamId, setDeletingTeamId] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -76,6 +77,33 @@ export default function Teams() {
 
   const handleViewTeam = (team) => {
     setSelectedTeam(team);
+  };
+
+  const handleDelete = async (teamId) => {
+    if (!teamId) {
+      alert('ID do time invalido.');
+      return;
+    }
+
+    const confirmDelete = window.confirm('Tem certeza que deseja excluir este time?');
+    if (!confirmDelete) return;
+
+    try {
+      setDeletingTeamId(teamId);
+      await teamService.deleteTeam(teamId);
+      alert('Time excluido com sucesso!');
+
+      if (selectedTeam?.id === teamId) {
+        setSelectedTeam(null);
+      }
+
+      await loadSavedTeams();
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      alert('Erro ao excluir time.');
+    } finally {
+      setDeletingTeamId(null);
+    }
   };
 
   const handleCloseView = () => {
@@ -213,14 +241,23 @@ export default function Teams() {
                   <button
                     onClick={() => handleViewTeam(team)}
                     className={styles.viewButton}
+                    disabled={deletingTeamId === team.id}
                   >
                     Ver Detalhes
                   </button>
                   <button
                     onClick={() => handleLoadTeam(team)}
                     className={styles.loadButton}
+                    disabled={deletingTeamId === team.id}
                   >
                     Carregar para Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(team.id)}
+                    className={styles.deleteButton}
+                    disabled={deletingTeamId === team.id}
+                  >
+                    {deletingTeamId === team.id ? 'Excluindo...' : 'Excluir'}
                   </button>
                 </div>
               </div>
@@ -321,8 +358,16 @@ export default function Teams() {
               <button
                 onClick={() => handleLoadTeam(selectedTeam)}
                 className={styles.loadButton}
+                disabled={deletingTeamId === selectedTeam.id}
               >
                 Carregar para Editar
+              </button>
+              <button
+                onClick={() => handleDelete(selectedTeam.id)}
+                className={styles.deleteButton}
+                disabled={deletingTeamId === selectedTeam.id}
+              >
+                {deletingTeamId === selectedTeam.id ? 'Excluindo...' : 'Excluir'}
               </button>
             </div>
           </div>

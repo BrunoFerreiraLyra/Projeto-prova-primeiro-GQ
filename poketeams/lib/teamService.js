@@ -140,14 +140,35 @@ export const teamService = {
 
   // Delete a team
   async deleteTeam(teamId) {
+    if (!teamId) {
+      throw new Error('TEAM_ID_REQUIRED')
+    }
+
     const user = await getRequiredUser()
 
-    const { error } = await supabase
+    const { data: existingTeam, error: teamLookupError } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('id', teamId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (teamLookupError) throw teamLookupError
+    if (!existingTeam) throw new Error('TEAM_NOT_FOUND')
+
+    const { error: deletePokemonError } = await supabase
+      .from('team_pokemon')
+      .delete()
+      .eq('team_id', teamId)
+
+    if (deletePokemonError) throw deletePokemonError
+
+    const { error: deleteTeamError } = await supabase
       .from('teams')
       .delete()
       .eq('id', teamId)
       .eq('user_id', user.id)
 
-    if (error) throw error
+    if (deleteTeamError) throw deleteTeamError
   }
 }

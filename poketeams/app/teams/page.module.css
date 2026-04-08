@@ -84,7 +84,8 @@
 
 .createButton,
 .viewButton,
-.loadButton {
+.loadButton,
+.deleteButton {
   border: none;
   border-radius: 10px;
   font-size: 0.95rem;
@@ -101,17 +102,29 @@
   box-shadow: 0 14px 24px rgba(0, 123, 255, 0.34);
 }
 
-.createButton:hover,
-.loadButton:hover,
-.viewButton:hover {
+.createButton:hover:not(:disabled),
+.loadButton:hover:not(:disabled),
+.viewButton:hover:not(:disabled),
+.deleteButton:hover:not(:disabled) {
   transform: translateY(-2px);
   filter: brightness(1.08);
 }
 
-.createButton:active,
-.loadButton:active,
-.viewButton:active {
+.createButton:active:not(:disabled),
+.loadButton:active:not(:disabled),
+.viewButton:active:not(:disabled),
+.deleteButton:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.createButton:disabled,
+.viewButton:disabled,
+.loadButton:disabled,
+.deleteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  transform: none;
+  filter: none;
 }
 
 .teamsGrid {
@@ -287,7 +300,8 @@
 }
 
 .viewButton,
-.loadButton {
+.loadButton,
+.deleteButton {
   flex: 1;
   padding: 0.73rem 1rem;
 }
@@ -302,6 +316,12 @@
   background: linear-gradient(135deg, #2d98ff, #0f79e7 60%, #085eb8);
   color: #fff;
   box-shadow: 0 12px 19px rgba(0, 123, 255, 0.33);
+}
+
+.deleteButton {
+  background: linear-gradient(135deg, #eb4d5c, #d83b4a);
+  color: #fff;
+  box-shadow: 0 12px 19px rgba(216, 59, 74, 0.34);
 }
 
 .modalOverlay {
@@ -544,9 +564,11 @@
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   justify-content: flex-end;
+  gap: 0.7rem;
 }
 
-.modalActions .loadButton {
+.modalActions .loadButton,
+.modalActions .deleteButton {
   max-width: 240px;
   width: 100%;
 }
@@ -665,6 +687,7 @@
   .createButton,
   .viewButton,
   .loadButton,
+  .deleteButton,
   .pokemonFilled,
   .moveTag,
   .closeButton {
