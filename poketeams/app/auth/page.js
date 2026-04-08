@@ -147,32 +147,31 @@ export default function Auth() {
   useEffect(() => {
     let isMounted = true;
 
-    const checkSession = async () => {
-      const {
-        data: { user }
-      } = await authService.getCurrentUser();
+    const syncSession = async () => {
+      try {
+        const {
+          data: { user }
+        } = await authService.getCurrentUser();
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      if (user) {
-        router.replace('/builder');
-        return;
+        if (user) {
+          router.replace('/builder');
+          return;
+        }
+
+        setSessionLoading(false);
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Error checking session:', error);
+        setSessionLoading(false);
       }
-
-      setSessionLoading(false);
     };
 
-    checkSession();
+    syncSession();
 
     const { data: authListener } = authService.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
-
-      if (session?.user) {
-        router.replace('/builder');
-        return;
-      }
-
-      setSessionLoading(false);
+      void syncSession();
     });
 
     return () => {

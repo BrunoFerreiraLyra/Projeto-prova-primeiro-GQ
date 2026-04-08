@@ -17,7 +17,7 @@ export default function Teams() {
   useEffect(() => {
     let isMounted = true;
 
-    const validateAuth = async () => {
+    const syncAuth = async () => {
       try {
         const {
           data: { user }
@@ -41,19 +41,10 @@ export default function Teams() {
       }
     };
 
-    validateAuth();
+    syncAuth();
 
     const { data: authListener } = authService.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
-
-      if (!session?.user) {
-        setAuthLoading(false);
-        router.replace('/auth');
-        return;
-      }
-
-      setAuthLoading(false);
-      loadSavedTeams();
+      void syncAuth();
     });
 
     return () => {

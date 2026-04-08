@@ -79,7 +79,7 @@ export default function Builder() {
   useEffect(() => {
     let isMounted = true;
 
-    const validateAuth = async () => {
+    const syncAuth = async () => {
       try {
         const {
           data: { user: currentUser }
@@ -102,19 +102,10 @@ export default function Builder() {
       }
     };
 
-    validateAuth();
+    syncAuth();
 
     const { data: authListener } = authService.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
-
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      setAuthLoading(false);
-
-      if (!currentUser) {
-        router.replace('/auth');
-        return;
-      }
+      void syncAuth();
     });
 
     return () => {

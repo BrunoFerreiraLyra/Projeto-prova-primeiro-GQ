@@ -22,6 +22,11 @@ function mapAuthErrorMessage(error, fallback = 'Nao foi possivel autenticar. Ten
   return fallback
 }
 
+function isInvalidJwtUserError(error) {
+  const message = error?.message?.toLowerCase?.() || ''
+  return message.includes('user from sub claim in jwt does not exist')
+}
+
 export const authService = {
   // Sign up
   async signUp(email, password, username) {
@@ -123,7 +128,23 @@ export const authService = {
 
   // Get current user
   async getCurrentUser() {
-    return supabase.auth.getUser()
+    const response = await supabase.auth.getUser()
+    const { error } = response
+
+    if (isInvalidJwtUserError(error)) {
+      try {
+        await supabase.auth.signOut({ scope: 'local' })
+      } catch {
+        // Ignore cleanup failures; caller will treat as no session.
+      }
+
+      return {
+        data: { user: null },
+        error: null
+      }
+    }
+
+    return response
   },
 
   // Get user profile
