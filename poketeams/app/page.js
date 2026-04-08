@@ -8,26 +8,38 @@ import styles from './page.module.css';
 
 export default function Home() {
   const [user, setUser] = useState(null);
+  const [username, setUsername] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const getUser = async () => {
+    const syncUserState = async () => {
       const {
         data: { user }
       } = await authService.getCurrentUser();
 
       setUser(user ?? null);
+
+      if (user?.id) {
+        try {
+          const profile = await authService.getUserProfile(user.id);
+          setUsername(profile?.username || null);
+        } catch (error) {
+          setUsername(null);
+        }
+      } else {
+        setUsername(null);
+      }
+
       setAuthLoading(false);
     };
 
-    getUser();
+    syncUserState();
 
     const { data: authListener } = authService.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
       setMenuOpen(false);
+      syncUserState();
     });
 
     return () => {
@@ -62,7 +74,7 @@ export default function Home() {
             aria-haspopup={user ? 'menu' : undefined}
             aria-expanded={user ? menuOpen : undefined}
           >
-            {authLoading ? 'Carregando...' : user?.email || 'Login'}
+            {authLoading ? 'Carregando...' : username || user?.email || 'Login'}
           </button>
 
           {user && menuOpen && (

@@ -2,13 +2,44 @@ import { supabase } from './supabase'
 
 export const authService = {
   // Sign up
-  async signUp(email, password) {
+  async signUp(email, password, username) {
+    const normalizedUsername = username?.trim()
+
+    if (!normalizedUsername || normalizedUsername.length < 3) {
+      throw new Error('Username deve ter no minimo 3 caracteres')
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          username: normalizedUsername
+        }
+      }
     })
 
     if (error) throw error
+
+    const userId = data?.user?.id
+    if (userId) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            username: normalizedUsername
+          }
+        ])
+
+      if (profileError) {
+        if (profileError.code === '23505') {
+          throw new Error('Esse username ja esta em uso')
+        }
+        throw profileError
+      }
+    }
+
     return data
   },
 
@@ -52,6 +83,20 @@ export const authService = {
   // Get current user
   async getCurrentUser() {
     return supabase.auth.getUser()
+  },
+
+  // Get user profile
+  async getUserProfile(userId) {
+    if (!userId) return null
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
   },
 
   // Listen to auth state changes
