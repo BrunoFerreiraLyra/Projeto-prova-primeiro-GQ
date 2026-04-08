@@ -63,7 +63,7 @@ export default function Home() {
             aria-haspopup={user ? 'menu' : undefined}
             aria-expanded={user ? menuOpen : undefined}
           >
-            {authLoading ? 'Carregando...' : user?.email || 'Login'}
+            {authLoading ? 'Carregando...' : user ? displayName : 'Login'}
           </button>
 
           {user && menuOpen && (
