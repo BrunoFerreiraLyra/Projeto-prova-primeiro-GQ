@@ -112,6 +112,19 @@ export default function Teams() {
 
   const getTeamPokemonCount = (team) => team.team_pokemon.filter(Boolean).length;
 
+  const getStatLabel = (stat) => {
+    const statLabels = {
+      hp: 'HP',
+      attack: 'Ataque',
+      defense: 'Defesa',
+      specialAttack: 'Ataque Especial',
+      specialDefense: 'Defesa Especial',
+      speed: 'Velocidade'
+    };
+
+    return statLabels[stat] || stat;
+  };
+
   const calculateEffectiveStats = (
     baseStats,
     level = 50,
@@ -313,14 +326,16 @@ export default function Teams() {
                           <div className={styles.statsGrid}>
                             {Object.entries(effectiveStats).map(([stat, value]) => (
                               <div key={stat} className={styles.statItem}>
-                                <span className={styles.statName}>{stat.toUpperCase()}</span>
-                                <div className={styles.statBar}>
-                                  <span
-                                    className={styles.statFill}
-                                    style={{ width: `${Math.min((value / 255) * 100, 100)}%` }}
+                                <div className={styles.statHeader}>
+                                  <span className={styles.statName}>{getStatLabel(stat)}</span>
+                                  <span className={styles.statValue}>{value}</span>
+                                </div>
+                                <div className={styles.statBarContainer}>
+                                  <div
+                                    className={styles.statBar}
+                                    style={{ width: `${Math.min(value, 100)}%` }}
                                   />
                                 </div>
-                                <span className={styles.statValue}>{value}</span>
                               </div>
                             ))}
                           </div>
