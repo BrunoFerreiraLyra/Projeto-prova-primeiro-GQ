@@ -51,6 +51,8 @@ export default function Home() {
     router.refresh();
   };
 
+  const displayName = user?.user_metadata?.display_name?.trim() || 'usuario';
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -74,6 +76,7 @@ export default function Home() {
         </div>
       </div>
 
+      <p className={styles.greeting}>Ola, {displayName}</p>
       <h1 className={styles.title}>Times de Pokemon</h1>
       <p className={styles.description}>
         Bem-vindo ao construtor de times de Pokemon. Monte equipes equilibradas para batalhas epicas.

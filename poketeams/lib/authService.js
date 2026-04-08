@@ -1,7 +1,14 @@
 import { supabase } from './supabase'
 
+const MIN_DISPLAY_NAME_LENGTH = 3
+const DEFAULT_DISPLAY_NAME = 'Usuario'
+
 function normalizeEmail(value) {
   return value?.trim().toLowerCase()
+}
+
+function normalizeDisplayName(value) {
+  return value?.trim()
 }
 
 function mapAuthErrorMessage(error, fallback = 'Nao foi possivel autenticar. Tente novamente.') {
@@ -25,16 +32,26 @@ function isInvalidJwtUserError(error) {
 
 export const authService = {
   // Sign up
-  async signUp(email, password) {
+  async signUp(email, password, displayName) {
     const normalizedEmail = normalizeEmail(email)
+    const normalizedDisplayName = normalizeDisplayName(displayName)
 
     if (!normalizedEmail) {
       throw new Error('Email invalido.')
     }
 
+    if (normalizedDisplayName && normalizedDisplayName.length < MIN_DISPLAY_NAME_LENGTH) {
+      throw new Error(`O nome de usuario deve ter no minimo ${MIN_DISPLAY_NAME_LENGTH} caracteres.`)
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
-      password
+      password,
+      options: {
+        data: {
+          display_name: normalizedDisplayName || DEFAULT_DISPLAY_NAME
+        }
+      }
     })
 
     if (error) throw error

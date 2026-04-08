@@ -134,6 +134,15 @@
   animation: slideUpIn 600ms 120ms ease both;
 }
 
+.greeting {
+  margin: 0;
+  color: rgba(191, 219, 254, 0.95);
+  font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  animation: slideUpIn 600ms 80ms ease both;
+}
+
 .description {
   margin: 0;
   max-width: min(60ch, 92vw);
