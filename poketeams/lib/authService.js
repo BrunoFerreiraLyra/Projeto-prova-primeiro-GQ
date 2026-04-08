@@ -1,16 +1,43 @@
 import { supabase } from './supabase'
 
+function normalizeEmail(value) {
+  return value?.trim().toLowerCase()
+}
+
+function normalizeUsername(value) {
+  return value?.trim()
+}
+
+function mapAuthErrorMessage(error, fallback = 'Nao foi possivel autenticar. Tente novamente.') {
+  const message = error?.message?.toLowerCase?.() || ''
+
+  if (message.includes('invalid login credentials') || message.includes('invalid credentials')) {
+    return 'Senha invalida.'
+  }
+
+  if (message.includes('email not confirmed')) {
+    return 'Confirme seu email antes de entrar.'
+  }
+
+  return fallback
+}
+
 export const authService = {
   // Sign up
   async signUp(email, password, username) {
-    const normalizedUsername = username?.trim()
+    const normalizedEmail = normalizeEmail(email)
+    const normalizedUsername = normalizeUsername(username)
 
     if (!normalizedUsername || normalizedUsername.length < 3) {
       throw new Error('Username deve ter no minimo 3 caracteres')
     }
 
+    if (!normalizedEmail) {
+      throw new Error('Email invalido.')
+    }
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         data: {
@@ -28,7 +55,8 @@ export const authService = {
         .insert([
           {
             id: userId,
-            username: normalizedUsername
+            username: normalizedUsername,
+            email: normalizedEmail
           }
         ])
 
@@ -36,7 +64,7 @@ export const authService = {
         if (profileError.code === '23505') {
           throw new Error('Esse username ja esta em uso')
         }
-        throw profileError
+        throw new Error('Conta criada, mas nao foi possivel salvar o perfil. Tente novamente.')
       }
     }
 
@@ -44,25 +72,35 @@ export const authService = {
   },
 
   // Sign in
-  async signIn(email, password) {
-    const login = email.trim()
-    const isEmailLogin = login.includes('@')
-    let resolvedEmail = login
+  async signIn(login, password) {
+    const normalizedLogin = login?.trim()
+
+    if (!normalizedLogin) {
+      throw new Error('Informe email ou username.')
+    }
+
+    const isEmailLogin = normalizedLogin.includes('@')
+    let resolvedEmail = normalizeEmail(normalizedLogin)
 
     if (!isEmailLogin) {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('email')
-        .ilike('username', login)
-        .maybeSingle()
+        .eq('username', normalizedLogin)
+        .single()
 
-      if (profileError) throw profileError
-      if (!profile) throw new Error('Usuario nao encontrado')
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          throw new Error('Usuario nao encontrado')
+        }
+        throw new Error('Erro ao buscar usuario. Tente novamente.')
+      }
+
       if (!profile.email) {
         throw new Error('Perfil sem email vinculado. Atualize a tabela profiles com o campo email.')
       }
 
-      resolvedEmail = profile.email
+      resolvedEmail = normalizeEmail(profile.email)
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -70,7 +108,10 @@ export const authService = {
       password
     })
 
-    if (error) throw error
+    if (error) {
+      throw new Error(mapAuthErrorMessage(error))
+    }
+
     return data
   },
 
