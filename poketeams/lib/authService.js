@@ -27,6 +27,11 @@ function isInvalidJwtUserError(error) {
   return message.includes('user from sub claim in jwt does not exist')
 }
 
+function isProfilesTableMissingError(error) {
+  const message = error?.message?.toLowerCase?.() || ''
+  return message.includes("could not find the table 'public.profiles' in the schema cache")
+}
+
 export const authService = {
   // Sign up
   async signUp(email, password, username) {
@@ -53,24 +58,50 @@ export const authService = {
 
     if (error) throw error
 
-    const userId = data?.user?.id
-    if (userId) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: userId,
-            username: normalizedUsername,
-            email: normalizedEmail
-          }
-        ])
+    const user = data?.user
+    if (!user?.id) {
+      throw new Error('Conta criada, mas nao foi possivel identificar o usuario para salvar o perfil.')
+    }
 
-      if (profileError) {
-        if (profileError.code === '23505') {
-          throw new Error('Esse username ja esta em uso')
-        }
-        throw new Error('Conta criada, mas nao foi possivel salvar o perfil. Tente novamente.')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const authUid = sessionData?.session?.user?.id ?? null
+
+    // Debug para validar se auth.uid() deve bater com user.id no insert com RLS.
+    console.debug('SignUp profile insert debug:', {
+      authUid,
+      userId: user.id,
+      uidMatches: authUid === user.id
+    })
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert(
+        {
+          id: user.id,
+          username: normalizedUsername,
+          email: normalizedEmail
+        },
+        { returning: 'minimal' }
+      )
+
+    if (profileError) {
+      console.error('Error inserting profile after signUp:', profileError, {
+        authUid,
+        userId: user.id,
+        profileErrorCode: profileError?.code,
+        profileErrorMessage: profileError?.message,
+        profileErrorDetails: profileError?.details
+      })
+
+      if (profileError.code === '23505') {
+        throw new Error('Esse username ja esta em uso')
       }
+
+      if (isProfilesTableMissingError(profileError)) {
+        throw new Error("Tabela public.profiles nao encontrada. Rode a migration de profiles no Supabase.")
+      }
+
+      throw new Error(profileError.message || 'Conta criada, mas nao foi possivel salvar o perfil.')
     }
 
     return data
@@ -95,6 +126,10 @@ export const authService = {
         .single()
 
       if (profileError) {
+        if (isProfilesTableMissingError(profileError)) {
+          throw new Error("Tabela public.profiles nao encontrada. Rode a migration de profiles no Supabase.")
+        }
+
         if (profileError.code === 'PGRST116') {
           throw new Error('Usuario nao encontrado')
         }
