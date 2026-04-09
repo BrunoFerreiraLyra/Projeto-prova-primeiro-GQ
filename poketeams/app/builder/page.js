@@ -120,10 +120,6 @@ export default function Builder() {
   const enrichStoredPokemon = useCallback(async (storedPokemon) => {
     const basePokemon = mapStoredPokemonToBuilder(storedPokemon);
 
-    if (storedPokemon.name && storedPokemon.base_stats && storedPokemon.image_url) {
-      return basePokemon;
-    }
-
     try {
       const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${storedPokemon.pokemon_id}`);
       const data = await res.json();
